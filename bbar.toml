@@ -1,0 +1,30 @@
+#This is a test config file for running benchmarks on SLURM
+
+modules        = ["gcc", "cuda", "openmpi"]
+batchfile_name = "{SBATCH_job-name}-{SBATCH_n}.batch"
+max_procs_per_node = 4
+
+[sbatch_params]
+job-name  = "benchmark"
+account   = "project_XXXXXXX"
+time      = "04:00:00"
+mem       = 48000
+partition = "gpu"
+gres      = "gpu:v100:{procs_on_node}"
+output    = "benchmark-{SBATCH_job-name}-{SBATCH_n}.out"
+x         = "r02g02,r03g[01,03,08],r04g[01,03-07],r13g[01-04],r14g[04,06-08],r15g08,r16g07,r17g06,r18g[02-05]"
+
+[scaleup]
+start       = 1
+step_factor = 2
+num_steps   = 2
+
+[benchmarks]
+workdir      = "results_{SBATCH_n}/mesh_{arguments[0]}/thresh_{UCX_RNDV_THRESH}"
+num_settings = 10
+command      = "./benchmark"
+arguments    = [256, 256, 256]
+
+[benchmarks.env_vars]  
+UCX_RNDV_THRESH.start = 4096
+UCX_RNDV_THRESH.step  = 2048
