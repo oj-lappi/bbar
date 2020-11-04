@@ -15,9 +15,10 @@ def check_valid_file(file, parser):
             parser.error(f"Error generating benchmarks from config file \"{file}\":\n\t File \"{file}\" does not exist")
 
 def main():
-    parser = argparse.ArgumentParser(description='generates and runs benchmarks for you automatically.')
-    parser.add_argument("command", choices=["test","generate","run"])
-    config_file_arg = parser.add_argument("config_file", nargs="?",default=default_config_file)
+    parser = argparse.ArgumentParser(description='Generates and runs benchmarks for you automatically')
+    command_choices = ["test","generate","run"]
+    parser.add_argument("command", choices=command_choices, metavar=f"command", help='{ '+' | '.join(command_choices)+' }')
+    config_file_arg = parser.add_argument("config_file", nargs="?",default=default_config_file, help=f"a TOML file containing benchmark configurations, (default='{default_config_file}')")
     args = parser.parse_args()
     
     check_valid_file(args.config_file, parser)
