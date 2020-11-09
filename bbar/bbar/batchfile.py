@@ -43,7 +43,7 @@ class SLURM_batch_params:
         
     def __repr__(self):
         return "\n".join([f"#SBATCH --{k}={v}" for k,v in self.param_dict.items() if len(k) > 1])+"\n"\
-                + "\n".join([f"#SBATCH -{k}={v}" for k,v in self.param_dict.items() if len(k) == 1])\
+                + "\n".join([f"#SBATCH -{k} {v}" for k,v in self.param_dict.items() if len(k) == 1])\
     
     
 class LMOD_modules:
