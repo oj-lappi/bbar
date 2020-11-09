@@ -3,14 +3,7 @@ import toml
 import shutil
 import subprocess
 import tempfile
-from .state_mgmt import BBAR_Store
-
-from pathlib import Path
-
-#Assumptions: sbatch files mainly differ by process count in a benchmark case
-
-default_job_name = "benchmark_job"
-default_procs_per_node = 4
+from bbar.persistence import BBAR_Store
 
 #Utilities for user input
 
@@ -31,8 +24,6 @@ def yesno_prompt(prompt=None, default=False):
         elif answer in ["n","no"]:
             return False
         print("please enter either y or n")
-
-
             
 #Generator functions
 

@@ -13,6 +13,6 @@ setup(name='bbar',
     author_email='oskar.lappi@abo.fi',
     license='MIT',
     packages=['bbar'],
-    install_requires=['toml'],
+    install_requires=['toml','python-statemachine'],
     entry_points={'console_scripts':['bbar=bbar.cmd:main']},
     zip_safe=False)

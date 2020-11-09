@@ -39,7 +39,12 @@ class BBAR_Store(TOML_Store):
         files.append(new_file)
         self.increment_state_counter()
         self.store_value(BBAR_Store.output_files_key, files)
-    
+ 
+    def clear_generated_files(self):
+        self.store_value(BBAR_Store.generated_batchfiles_key, [])
+        self.store_value(BBAR_Store.generated_dirs_key, [])
+        self.store_value(BBAR_Store.output_files_key, [])
+
     def increment_state_counter(self):
         counter = self.get_state_counter()
         self.set(BBAR_Store.state_counter_key, counter+1)
