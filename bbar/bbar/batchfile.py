@@ -42,7 +42,8 @@ class SLURM_batch_params:
             self.format_params[f"SBATCH_{key}"] = self.param_dict[key]
         
     def __repr__(self):
-        return "\n".join([f"#SBATCH --{k}={v}" for k,v in self.param_dict.items()])
+        return "\n".join([f"#SBATCH --{k}={v}" for k,v in self.param_dict.items() if len(k) > 1])+"\n"\
+                + "\n".join([f"#SBATCH -{k}={v}" for k,v in self.param_dict.items() if len(k) == 1])\
     
     
 class LMOD_modules:
@@ -142,3 +143,4 @@ class SLURM_batchfile:
             f"{self.modules}\n\n"\
             f"{self.commands}\n"\
             f"{newline+self.cleanup if self.cleanup else ''}"
+
