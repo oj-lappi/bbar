@@ -92,18 +92,25 @@ class SLURM_jobstep_list:
                 use_subshell=False
 
         num_settings = int(config["num_settings"])
-        
-        try:
-            argument_generators = [generator_from_config(i,v,num_settings) for i,v in enumerate(config["arguments"])]
-        except Exception as e:
-            raise Exception("ERROR generating arguments for benchmarks:", e)
-        try:
-            env_var_generators = {
-                k:generator_from_config(k,v,num_settings)
-                for k,v in config["env_vars"].items()
-            }
-        except Exception as e:
-            raise Exception("ERROR generating environment variables for benchmarks:", e)
+        if "arguments" in config:
+            try:
+                argument_generators = [generator_from_config(i,v,num_settings) for i,v in enumerate(config["arguments"])]
+            except Exception as e:
+                raise Exception("ERROR generating arguments for benchmarks:", e)
+        else:
+            argument_generators = []
+
+
+        if "env_vars" in config:
+            try:
+                env_var_generators = {
+                    k:generator_from_config(k,v,num_settings)
+                    for k,v in config["env_vars"].items()
+                }
+            except Exception as e:
+                raise Exception("ERROR generating environment variables for benchmarks:", e)
+        else:
+            env_var_generators = {}
         
         self.commands = []
         self.workdirs = []
