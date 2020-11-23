@@ -25,7 +25,7 @@ class SLURM_batch_params:
         self.n_procs = n_procs
         self.param_dict["n"] = self.n_procs
         #TODO(DOCUMENT): hardcoded allocation semantics, according to assumption #2, change?
-        self.param_dict["N"] = (self.n_procs+3//self.max_procs_per_node)    
+        self.param_dict["N"] = ((self.n_procs+3)//self.max_procs_per_node)    
         self.procs_on_node = min(self.n_procs, self.max_procs_per_node)
 
         
