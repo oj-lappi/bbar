@@ -22,24 +22,28 @@ class SLURM_batch_params:
     def __init__(self,config, n_procs):
         self.param_dict = {k:v for k,v in config["sbatch_params"].items()}
         self.max_procs_per_node = int(config["max_procs_per_node"]) if "max_procs_per_node" in config else SLURM_batch_params.default_procs_per_node
-        self.n_procs = n_procs
-        self.param_dict["n"] = self.n_procs
+        self.param_dict["n"] = n_procs
+        self.n_procs = self.param_dict["n"]
         #TODO(DOCUMENT): hardcoded allocation semantics, according to assumption #2, change?
         self.param_dict["N"] = ((self.n_procs+3)//self.max_procs_per_node)    
-        self.procs_on_node = min(self.n_procs, self.max_procs_per_node)
+        self.n_nodes = self.param_dict["N"]
 
         
         if "job-name" not in self.param_dict:
             self.param_dict["job-name"] = SLURM_batch_params.default_job_name
         if "output" not in self.param_dict:
             self.param_dict["output"] = f"{self.param_dict['job-name']}-{self.n_procs}-%j.out"
-            
+
+        self.procs_on_node = min(self.n_procs, self.max_procs_per_node)
         self.format_params = {f"SBATCH_{k}":v for k,v in self.param_dict.items()}
         #DOCUMENT:sbatch parameters with format params can only refer to parameters declared earlier than them (and "n","N","jobname","output")
         for key, value in self.param_dict.items():
             if isinstance(value, str):
                 self.param_dict[key] = value.format(**self.format_params, procs_on_node = self.procs_on_node)
             self.format_params[f"SBATCH_{key}"] = self.param_dict[key]
+
+        self.job_name = self.param_dict["job-name"]
+        self.output = self.param_dict["output"]
         
     def __repr__(self):
         return "\n".join([f"#SBATCH --{k}={v}" for k,v in self.param_dict.items() if len(k) > 1])+"\n"\
@@ -85,22 +89,28 @@ class SLURM_jobstep_list:
         workdir_pattern = config["workdir"]
         command_dir = config["command_dir"] if "command_dir" in config else "."
         command = config["command"]
-        use_subshell = True
+
+        use_subshell = False
         if "use_subshell" in config:
             use_subshell_str =str(config["use_subshell"]).lower()
             if use_subshell_str in ["no","false","f","0","off"]:
                 use_subshell=False
+            if use_subshell_str in ["yes","true","t","1","on"]:
+                use_subshell=True
 
-        num_settings = int(config["num_settings"])
+        
+        num_settings = 1
+        if "num_settings" in config:
+            num_settings = int(config["num_settings"])
+
+        argument_generators = []
         if "arguments" in config:
             try:
                 argument_generators = [generator_from_config(i,v,num_settings) for i,v in enumerate(config["arguments"])]
             except Exception as e:
                 raise Exception("ERROR generating arguments for benchmarks:", e)
-        else:
-            argument_generators = []
 
-
+        env_var_generators = {}
         if "env_vars" in config:
             try:
                 env_var_generators = {
@@ -109,8 +119,6 @@ class SLURM_jobstep_list:
                 }
             except Exception as e:
                 raise Exception("ERROR generating environment variables for benchmarks:", e)
-        else:
-            env_var_generators = {}
         
         self.commands = []
         self.workdirs = []

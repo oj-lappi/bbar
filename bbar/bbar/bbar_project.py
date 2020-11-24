@@ -78,6 +78,7 @@ class BBAR_Project:
     
     #cmd:list
     def list_files(self):
+        self.scan_for_results()
         dirs = self.state.get_generated_dirs()
         batchfiles = self.state.get_generated_batchfiles()
         outputs = self.state.get_output_files()
@@ -136,6 +137,15 @@ class BBAR_Project:
                 
 
     def scan_for_results(self):
+        for batchfile in self.slurm_batchfiles:
+            output_file = batchfile.sbatch_params.output
+            #TODO: match SLURM patterns
+            #REQUIRES: capture SLURM job ids and other SLURM parameters that could be part of this
+            #job id should be enough, the rest can be acquired through sstat
+            if os.path.isfile(output_file):
+                self.state.add_output_file(output_file)
+            #for workdir in batchfile.commands.workdirs:
+            #    #TODO: check contents of workdir, maybe there's something there?
         pass
 
     #cmd:test (TODO:change to better tests)

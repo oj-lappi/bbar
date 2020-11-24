@@ -14,36 +14,42 @@ class BBAR_Store(TOML_Store):
         return self.get(BBAR_Store.state_counter_key) or 0
 
     def get_generated_dirs(self):
-        return self.get(BBAR_Store.generated_dirs_key) or []
+        return self.get(BBAR_Store.generated_dirs_key) or {}
 
     def get_generated_batchfiles(self):
-        return self.get(BBAR_Store.generated_batchfiles_key) or []
+        return self.get(BBAR_Store.generated_batchfiles_key) or {}
 
     def get_output_files(self):
-        return self.get(BBAR_Store.output_files_key) or []
+        return self.get(BBAR_Store.output_files_key) or {}
 
     def add_generated_dir(self, new_dir):
         dirs = self.get_generated_dirs()
-        dirs.append(new_dir)
+        if new_dir in dirs:
+            return
+        dirs[new_dir] = True
         self.increment_state_counter()
         self.store_value(BBAR_Store.generated_dirs_key, dirs)
     
     def add_generated_batchfile(self, new_file):
         files = self.get_generated_batchfiles()
-        files.append(new_file)
+        if new_file in files:
+            return
+        files[new_file] = True
         self.increment_state_counter()
         self.store_value(BBAR_Store.generated_batchfiles_key, files)
     
     def add_output_file(self, new_file):
         files = self.get_output_files()
-        files.append(new_file)
+        if new_file in files:
+            return
+        files[new_file] = True
         self.increment_state_counter()
         self.store_value(BBAR_Store.output_files_key, files)
  
     def clear_generated_files(self):
-        self.store_value(BBAR_Store.generated_batchfiles_key, [])
-        self.store_value(BBAR_Store.generated_dirs_key, [])
-        self.store_value(BBAR_Store.output_files_key, [])
+        self.store_value(BBAR_Store.generated_batchfiles_key, {})
+        self.store_value(BBAR_Store.generated_dirs_key, {})
+        self.store_value(BBAR_Store.output_files_key, {})
 
     def increment_state_counter(self):
         counter = self.get_state_counter()
