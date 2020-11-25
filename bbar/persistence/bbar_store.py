@@ -6,12 +6,16 @@ class BBAR_Store(TOML_Store):
     generated_batchfiles_key = "generated_batchfiles"
     output_files_key = "output_files"
     state_counter_key = "STATE_COUNTER"
+    status_key = "status"
     
     def __init__(self, storage_path=bbar_default_storage_path):
         super().__init__(storage_path)
 
     def get_state_counter(self):
         return self.get(BBAR_Store.state_counter_key) or 0
+    
+    def get_status(self):
+        return self.get(BBAR_Store.status_key) or None
 
     def get_generated_dirs(self):
         return self.get(BBAR_Store.generated_dirs_key) or {}
@@ -21,6 +25,13 @@ class BBAR_Store(TOML_Store):
 
     def get_output_files(self):
         return self.get(BBAR_Store.output_files_key) or {}
+
+    def increment_state_counter(self):
+        counter = self.get_state_counter()
+        self.set(BBAR_Store.state_counter_key, counter+1)
+
+    def set_status(self, status):
+        self.store_value(BBAR_Store.status_key, status)
 
     def add_generated_dir(self, new_dir):
         dirs = self.get_generated_dirs()
@@ -51,6 +62,3 @@ class BBAR_Store(TOML_Store):
         self.store_value(BBAR_Store.generated_dirs_key, {})
         self.store_value(BBAR_Store.output_files_key, {})
 
-    def increment_state_counter(self):
-        counter = self.get_state_counter()
-        self.set(BBAR_Store.state_counter_key, counter+1)

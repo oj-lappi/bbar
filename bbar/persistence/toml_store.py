@@ -1,5 +1,6 @@
 import toml
 import os
+from bbar.logging import debug
 
 default_storage_path = ".toml_store"
 
@@ -9,7 +10,7 @@ class TOML_Store:
         if storage_path is not None:
             self.storage_path = storage_path
         if os.path.isfile(self.storage_path):
-            print("Loading", self.storage_path)
+            debug(f"Loading {self.storage_path}")
             self.state = toml.load(self.storage_path)
         else:
             self.state = {}

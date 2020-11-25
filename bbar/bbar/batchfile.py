@@ -1,4 +1,5 @@
 from .generators import generator_from_config
+from .boolean_parse import human_to_bool
 from pathlib import Path
 
 
@@ -92,13 +93,8 @@ class SLURM_jobstep_list:
 
         use_subshell = False
         if "use_subshell" in config:
-            use_subshell_str =str(config["use_subshell"]).lower()
-            if use_subshell_str in ["no","false","f","0","off"]:
-                use_subshell=False
-            if use_subshell_str in ["yes","true","t","1","on"]:
-                use_subshell=True
-
-        
+            use_subshell = human_to_bool(config["use_subshell"],default=False)
+                    
         num_settings = 1
         if "num_settings" in config:
             num_settings = int(config["num_settings"])
