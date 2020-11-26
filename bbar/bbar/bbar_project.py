@@ -24,11 +24,10 @@ class BBAR_Project:
         self.bbarfile_data = bbarfile_data
         self.state = BBAR_Store()
 
-        self.slurm_batchfiles = [SLURM_batchfile(bbarfile_data, n_procs)  for n_procs in scale_up_generator(bbarfile_data["scaleup"])]
-
-        #TODO: read archive name from bbarfile
-        self.archive_name = "bbar"
+        #TODO: ugly hack, these should all fall under some object named Scheduler which has a schedule_command and a run_command
+        #Also, the names are currently the wrong way round
         self.runner = "sbatch"
+        runner="srun"
         if "runner" in bbarfile_data:
             self.runner = bbarfile_data["runner"]
 
@@ -36,6 +35,10 @@ class BBAR_Project:
         if "use_runner" in bbarfile_data:
             self.use_runner = human_to_bool(bbarfile_data["use_runner"], default=True)
 
+        self.slurm_batchfiles = [SLURM_batchfile(bbarfile_data, n_procs, runner=runner, use_runner=self.use_runner)  for n_procs in scale_up_generator(bbarfile_data["scaleup"])]
+
+        #TODO: read archive name from bbarfile
+        self.archive_name = "bbar"
         self.initialized = True
  
     def __repr__(self):

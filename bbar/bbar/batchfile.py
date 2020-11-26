@@ -70,12 +70,15 @@ class Environment_variables:
         return ""
     
 class SLURM_jobstep:
-    def __init__(self, workdir, command_dir, command, arguments, env_vars, sbatch_format_params, use_subshell):
+    def __init__(self, workdir, command_dir, command, arguments, env_vars, sbatch_format_params, use_subshell, runner="srun", use_runner=True):
         self.env_vars = Environment_variables(env_vars)
         self.workdir = workdir
         self.command_dir = command_dir.format(**env_vars, **sbatch_format_params, arguments=arguments)
         self.command = (Path(command_dir) / command).absolute()
-        self.arguments = [self.command]+arguments
+        if use_runner:
+            self.arguments = [runner, self.command]+arguments
+        else:
+            self.arguments = [self.command]+arguments
         self.use_subshell = use_subshell
         
     def __repr__(self):
@@ -86,7 +89,7 @@ class SLURM_jobstep:
 
        
 class SLURM_jobstep_list:
-    def __init__(self, config, sbatch_format_params):
+    def __init__(self, config, sbatch_format_params, runner="srun", use_runner=True):
         workdir_pattern = config["workdir"]
         command_dir = config["command_dir"] if "command_dir" in config else "."
         command = config["command"]
@@ -124,17 +127,17 @@ class SLURM_jobstep_list:
             env_vars = {k:next(v) for k,v in env_var_generators.items()}
             workdir = workdir_pattern.format(**env_vars, **sbatch_format_params, arguments=arguments)
             self.workdirs.append(workdir)
-            self.commands.append(SLURM_jobstep( workdir, command_dir, command, arguments, env_vars, sbatch_format_params, use_subshell = use_subshell))
+            self.commands.append(SLURM_jobstep( workdir, command_dir, command, arguments, env_vars, sbatch_format_params, use_subshell = use_subshell, runner=runner, use_runner=use_runner))
             
     def __repr__(self):
         return "\n".join([f"{c}" for c in self.commands])
     
 class SLURM_batchfile:
-    def __init__(self, config, n_procs):
+    def __init__(self, config, n_procs, runner="srun", use_runner=True):
                                                    
         self.sbatch_params = SLURM_batch_params(config, n_procs)
         self.modules = LMOD_modules(config)
-        self.commands = SLURM_jobstep_list(config["benchmarks"], self.sbatch_params.format_params)
+        self.commands = SLURM_jobstep_list(config["benchmarks"], self.sbatch_params.format_params, runner=runner, use_runner=use_runner)
         self.setup = config["setup"] if "setup" in config else ""
         self.cleanup = config["cleanup"] if "cleanup" in config else ""
         filename_pattern = config["batchfile_name"] if "batchfile_name" in config else "{SBATCH_job-name}-{SBATCH_n}.batch"
