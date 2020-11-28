@@ -1,7 +1,6 @@
 import os
 import toml
 import shutil
-import subprocess
 import tempfile
 
 from pathlib import Path
@@ -9,11 +8,11 @@ from pathlib import Path
 from bbar.persistence import BBAR_Store
 from bbar.constants import default_bbarfile_name, BBAR_SUCCESS, BBAR_FAILURE
 from bbar.logging import error, warning, info, debug
+from bbar.scheduler.plugins import get as get_scheduler
 
-from .batchfile import SLURM_batchfile
-from .generators import scale_up_generator
-from .prompts import yesno_prompt
-from .boolean_parse import human_to_bool
+from bbar.util.generators import scale_up_generator
+from bbar.util.prompts import yesno_prompt
+from bbar.util.boolean_parse import human_to_bool
 
 
 class BBAR_Project:
@@ -23,19 +22,13 @@ class BBAR_Project:
 
         self.bbarfile_data = bbarfile_data
         self.state = BBAR_Store()
+        self.scheduler_name = "SLURM"
+        if "scheduler" in bbarfile_data:
+            self.scheduler_name = bbarfile_data["scheduler"]
 
-        #TODO: ugly hack, these should all fall under some object named Scheduler which has a schedule_command and a run_command
-        #Also, the names are currently the wrong way round
-        self.runner = "sbatch"
-        runner="srun"
-        if "runner" in bbarfile_data:
-            self.runner = bbarfile_data["runner"]
-
-        self.use_runner = True
-        if "use_runner" in bbarfile_data:
-            self.use_runner = human_to_bool(bbarfile_data["use_runner"], default=True)
-
-        self.slurm_batchfiles = [SLURM_batchfile(bbarfile_data, n_procs, runner=runner, use_runner=self.use_runner)  for n_procs in scale_up_generator(bbarfile_data["scaleup"])]
+        self.scheduler = get_scheduler(self.scheduler_name)
+        
+        self.batchfiles = [self.scheduler.Batchfile(bbarfile_data, n_procs)  for n_procs in scale_up_generator(bbarfile_data["scaleup"])]
 
         #TODO: read archive name from bbarfile
         self.archive_name = "bbar"
@@ -45,7 +38,7 @@ class BBAR_Project:
         return toml.dumps(self.bbarfile_data)
 
     def create_directories(self):
-        for batch_cfg in self.slurm_batchfiles:
+        for batch_cfg in self.batchfiles:
             for wd in batch_cfg.commands.workdirs:
                 try:
                     path = Path(wd).relative_to(Path('.').resolve())
@@ -65,7 +58,7 @@ class BBAR_Project:
     #Currently, no distinction between failing generation after generating some files, and no files
     #Weird state if only some created: should be special garbage state, or automatically rolled back
     def create_batchfiles(self, interactive=False):
-        for batch_cfg in self.slurm_batchfiles:
+        for batch_cfg in self.batchfiles:
             if interactive and os.path.isfile(batch_cfg.filename):
                 if not yesno_prompt("Generated batchfiles will overwrite old ones, is this ok?"):
                     return BBAR_FAILURE
@@ -131,36 +124,30 @@ class BBAR_Project:
         self.list_generated_files()
         self.list_output()
         
-    #TODO: allow more than one runner? sbatch is kind of hard coded now, but it's also hard coded in the model
-    def run_benchmarks(self, **kwargs):
+    def run_batchfiles(self, **kwargs):
         "called by the run command"
-        if self.use_runner:
-            info(f"Using runner {self.runner}")
-            if self.runner != "sbatch":
-                warning("The only supported runner is SLURM (using sbatch)")
-        else:
-            info(f"Not using a runner at all, running batch files as shell scripts")
+        info(f"Using scheduler {self.scheduler_name}")
 
-        for batch_cfg in self.slurm_batchfiles:
-            filename = batch_cfg.filename
+        for batchfile in self.batchfiles:
+            filename = batchfile.filename
             if os.path.exists(filename):
-                if self.use_runner:
-                    args = [self.runner,filename]
-                else:
-                    args = ["/usr/bin/bash", "-c", f"source {filename}"]
-
                 try:
-                    subprocess.check_call(args)
+                    self.scheduler.schedule_job(batchfile)
                 except BaseException as e:
-                    error(f"Failed to run \"{' '.join(args)}\":\n{e}\n")
+                    error(f"Exception in scheduler {self.scheduler}, calling schedule_job('{filename}'):\n\t{e}\n")
+                    #TODO: cancel existing jobs
                     return BBAR_FAILURE
+            else:
+                error(f"Batch file {filename} doesn't exist")
+                #TODO: cancel existing jobs
+                return BBAR_FAILURE
         return BBAR_SUCCESS
 
     def archive_output(self, **kwargs):
         "called by the archive command"
         archive_name = self.archive_name
         with tempfile.TemporaryDirectory() as tmpdir:
-            for batch_cfg in self.slurm_batchfiles:
+            for batch_cfg in self.batchfiles:
                 for wd in batch_cfg.commands.workdirs:
                     try:
                         path = Path(wd).relative_to(Path('.').resolve())
@@ -177,12 +164,12 @@ class BBAR_Project:
                 
 
     def scan_for_results(self):
-        for batchfile in self.slurm_batchfiles:
-            output_file = batchfile.sbatch_params.output
+        for batchfile in self.batchfiles:
+            output_file = batchfile.output
             #TODO: match SLURM patterns
             #REQUIRES: capture SLURM job ids and other SLURM parameters that could be part of this
             #job id should be enough, the rest can be acquired through sstat
             if os.path.isfile(output_file):
                 self.state.add_output_file(output_file)
             #for workdir in batchfile.commands.workdirs:
-            #    #TODO: check contents of workdir, maybe there's something there?
+            #    #TODO: check contents of workdir, needed for programs that generate files as output

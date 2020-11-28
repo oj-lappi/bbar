@@ -67,7 +67,7 @@ class BBAR_FSM(StateMachine):
             return self.init
 
     def on_start(self):
-        if (self.bbar_project.run_benchmarks(**self.options) == BBAR_SUCCESS):
+        if (self.bbar_project.run_batchfiles(**self.options) == BBAR_SUCCESS):
             info("Jobs have been started.")
             return self.running
         else:

@@ -3,6 +3,7 @@ import toml
 from bbar.bbar import BBAR_Project
 from bbar.constants import default_bbarfile_name
 
+#TODO: these first three are messy, might not want to involve the parser here
 def check_valid_file(f, parser, default):
     if not os.path.isfile(f):
         if default:
@@ -30,6 +31,10 @@ def parse_overrides(overrides, config, argparser):
             config = override_dict(override_config, config)
     return config
  
+
+def overwrite(base, overwriter):
+    pass
+
 def read_bbarfile(bbarfile_path, parser, overrides):
     
     default_file_used = False if bbarfile_path else True
@@ -43,9 +48,9 @@ def read_bbarfile(bbarfile_path, parser, overrides):
         if not bset.initialized:
             raise("Unknown error")
     except toml.decoder.TomlDecodeError as e:
-        parser.error(f"Error parsing bbarfile TOML in \"{args.config_file}\":\n\t{e}")
+        parser.error(f"Error parsing bbarfile TOML in \"{bbarfile_path}\":\n\t{e}")
     except Exception as e:
         raise(e)
-        parser.error(f"Error reading or parsing bbarfile \"{args.config_file}\":\n\t{e}")
+        parser.error(f"Error reading or parsing bbarfile \"{bbarfile_path}\":\n\t{e}")
 
     return bset
