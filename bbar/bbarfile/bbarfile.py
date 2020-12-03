@@ -39,6 +39,7 @@ def read_bbarfile( bbarfile_path, overrides):
     try:
         bbarfile_data = toml.load(bbarfile_path)
         bbarfile_data = deep_dict_union(defaults, bbarfile_data)
+        #bbarfile_data = deep_dict_union(bbarfile_data, defaults)
         bbarfile_data = apply_user_overrides(bbarfile_data, overrides)
         bset = BBAR_Project(bbarfile_data)
         if not bset.initialized:
