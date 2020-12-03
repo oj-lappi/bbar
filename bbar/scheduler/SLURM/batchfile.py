@@ -48,7 +48,7 @@ class SLURM_Batchfile(BaseBatchfile):
     def __init__(self, config, n_procs):                                        
         self.sbatch_params = SLURM_batch_params(config, n_procs)
         self.output = self.sbatch_params.param_dict["output"]
-        self.jobname = self.sbatch_params.param_dict["jobname"]
+        self.jobname = self.sbatch_params.param_dict["job-name"]
         format_params = self.sbatch_params.format_params
 
         self.modules = LMOD_modules(config)
