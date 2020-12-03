@@ -54,7 +54,7 @@ class Commands:
     def __init__(self, config, format_params):
         cfg = config.copy()
         conditionals = cfg["if"] if "if" in cfg else {}
-        for condition, conditional_value in conditionals:
+        for condition, conditional_value in conditionals.items():
             if condition_eval(condition, format_params):
                 #add contents of v, a dict, to cfg
                 cfg = deep_dict_union(cfg, conditional_value)
