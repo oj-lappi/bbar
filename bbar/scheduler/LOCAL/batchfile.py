@@ -1,6 +1,7 @@
 from bbar.generic import Environment_variables, LMOD_modules
 from bbar.generic import Commands
 from bbar.scheduler.base import BaseBatchfile
+from bbar.scheduler.SLURM.batchfile import SLURM_batch_params
 
 #DOCUMENT: Assumptions for sbatch files:
 #   1. sbatch files mainly differ by process count in a benchmark case, for scale benchmarks
@@ -15,59 +16,23 @@ from bbar.scheduler.base import BaseBatchfile
 # --N
 # --job-name
 # --output
-class FAKE_SLURM_batch_params:
-    default_job_name = "benchmark_job"
-    default_procs_per_node = 4
 
-    def __init__(self,config, n_procs):
-        self.param_dict = {k:v for k,v in config["sbatch_params"].items()}
-        self.max_procs_per_node = int(config["max_procs_per_node"]) if "max_procs_per_node" in config else FAKE_SLURM_batch_params.default_procs_per_node
-        self.param_dict["n"] = n_procs
-        self.n_procs = self.param_dict["n"]
-        #TODO(DOCUMENT): hardcoded allocation semantics, according to assumption #2, change?
-        self.param_dict["N"] = ((self.n_procs+3)//self.max_procs_per_node)    
-        self.n_nodes = self.param_dict["N"]
-
-        
-        if "job-name" not in self.param_dict:
-            self.param_dict["job-name"] = FAKE_SLURM_batch_params.default_job_name
-        if "output" not in self.param_dict:
-            self.param_dict["output"] = f"{self.param_dict['job-name']}-{self.n_procs}-%j.out"
-
-        self.procs_on_node = min(self.n_procs, self.max_procs_per_node)
-        self.format_params = {f"SBATCH_{k}":v for k,v in self.param_dict.items()}
-        #DOCUMENT:sbatch parameters with format params can only refer to parameters declared earlier than them (and "n","N","jobname","output")
-        for key, value in self.param_dict.items():
-            if isinstance(value, str):
-                self.param_dict[key] = value.format(**self.format_params, procs_on_node = self.procs_on_node)
-            self.format_params[f"SBATCH_{key}"] = self.param_dict[key]
-
-        self.job_name = self.param_dict["job-name"]
-        self.output = self.param_dict["output"]
-        
-    def __repr__(self):
-        return "\n".join([f"#LOCAL TEST --{k}={v}" for k,v in self.param_dict.items() if len(k) > 1])+"\n"\
-                + "\n".join([f"#LOCAL TEST -{k} {v}" for k,v in self.param_dict.items() if len(k) == 1])\
-
+class FAKE_SLURM_batch_params(SLURM_batch_params):
+    BATCHFILE_PREFIX="LOCAL_TEST"
 
 class Shellscript_Batchfile(BaseBatchfile):
     def __init__(self, config, n_procs):
                                                    
         self.batch_params = FAKE_SLURM_batch_params(config, n_procs)
-        self.output = self.batch_params.output
+        self.output = self.batch_params.param_dict["output"]
+        self.jobname = self.batch_params.param_dict["job-name"]
         format_params = self.batch_params.format_params
 
         self.modules = LMOD_modules(config)
-        self.setup = config["setup"] if "setup" in config else ""
         self.commands = Commands(config["benchmarks"], format_params)
-        self.cleanup = config["cleanup"] if "cleanup" in config else ""
-        filename_pattern = config["batchfile_name"] if "batchfile_name" in config else "{SBATCH_job-name}-{SBATCH_n}.batch"
-        self.filename = filename_pattern.format(**format_params)
-
-    #TODO: only functions that should maybe be moved out, then we would have a pure data object
-    def create_file(self):
-        with open(self.filename,"w") as f:
-            f.write(str(self))
+        self.setup = config["setup"]
+        self.cleanup = config["cleanup"]
+        self.filename = config["batchfile_name"].format(**format_params)
 
     def __repr__(self):
         newline = "\n"

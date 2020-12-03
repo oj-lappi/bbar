@@ -14,7 +14,6 @@ from bbar.util.generators import scale_up_generator
 from bbar.util.prompts import yesno_prompt
 from bbar.util.boolean_parse import human_to_bool
 
-
 class BBAR_Project:
     "BBAR_Project is a control object that captures all model data and ties actions to those data"
     def __init__(self, bbarfile_data, bbarfile_path=None):
@@ -22,10 +21,7 @@ class BBAR_Project:
 
         self.bbarfile_data = bbarfile_data
         self.state = BBAR_Store()
-        self.scheduler_name = "SLURM"
-        if "scheduler" in bbarfile_data:
-            self.scheduler_name = bbarfile_data["scheduler"]
-
+        self.scheduler_name = bbarfile_data["scheduler"]
         self.scheduler = get_scheduler(self.scheduler_name)
         
         self.batchfiles = [self.scheduler.Batchfile(bbarfile_data, n_procs)  for n_procs in scale_up_generator(bbarfile_data["scaleup"])]
@@ -58,14 +54,15 @@ class BBAR_Project:
     #Currently, no distinction between failing generation after generating some files, and no files
     #Weird state if only some created: should be special garbage state, or automatically rolled back
     def create_batchfiles(self, interactive=False):
-        for batch_cfg in self.batchfiles:
-            if interactive and os.path.isfile(batch_cfg.filename):
+        for batchfile in self.batchfiles:
+            if interactive and os.path.isfile(batchfile.filename):
                 if not yesno_prompt("Generated batchfiles will overwrite old ones, is this ok?"):
                     return BBAR_FAILURE
                 else:
                     interactive=False
-            self.state.add_generated_batchfile(batch_cfg.filename)
-            batch_cfg.create_file()
+            self.state.add_generated_batchfile(batchfile.filename)
+            with open(batchfile.filename,"w") as f:
+                f.write(str(batchfile))
         return BBAR_SUCCESS
          
     #MAYBE: rewrite to ask if there are outputs in the dirs

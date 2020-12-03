@@ -1,6 +1,6 @@
 import argparse
 import pprint
-from bbar.bbarfile import read_bbarfile
+from bbar.bbarfile import read_bbarfile, BBARFile_Error
 from bbar.constants import default_bbarfile_name
 from bbar.state_machine import BBAR_FSM
 from bbar.logging import set_verbosity
@@ -22,7 +22,11 @@ def main():
  
     set_verbosity(args.verbose - args.quiet)
 
-    bbar_project = read_bbarfile(args.bbarfile, parser, args.p)
+    try:
+        bbar_project = read_bbarfile(args.bbarfile, args.p)
+    except BBARFile_Error as e:
+        parser.error(e)
+
     state_machine = BBAR_FSM(bbar_project, interactive = not args.f)
     state_machine.try_system_task("scan")
  

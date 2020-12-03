@@ -2,55 +2,59 @@ import os
 import toml
 from bbar.bbar import BBAR_Project
 from bbar.constants import default_bbarfile_name
+from .defaults import bbarfile_defaults
+from bbar.logging import debug
 
-#TODO: these first three are messy, might not want to involve the parser here
-def check_valid_file(f, parser, default):
+class BBARFile_Error(Exception):
+    pass
+
+#TODO: do some fancy error messages printing out the offending lines
+
+def check_valid_file(f):
     if not os.path.isfile(f):
-        if default:
-            parser.error(f"Error reading bbarfile:\n\t No filename provided, and default \"{default_bbarfile_name}\" does not exist")
-        else:
-            parser.error(f"Error reading bbarfile \"{f}\":\n\t File \"{f}\" does not exist")
+        raise BBARFile_Error(f"Error reading bbarfile \"{f}\":\n\t File \"{f}\" does not exist")
 
-def override_dict(overriding_dict, original_dict):
-    for k,v in overriding_dict.items():
+def deep_dict_union(original_dict, override_dict):
+    for k,v in override_dict.items():
         if k in original_dict:
             if isinstance(original_dict[k],dict) and isinstance(v,dict):
-                override_dict(v, original_dict[k])        
+                deep_dict_union(v, original_dict[k])        
                 continue
         original_dict[k] = v
     return original_dict
 
-def parse_overrides(overrides, config, argparser):
+def apply_user_overrides(original, overrides):
     if overrides:
         for override in overrides:
             try:
                 override_config = toml.loads(override)
             except toml.decoder.TomlDecodeError as e:
-                argparser.error(f"Error parsing command line bbarfile override parameter \"-p {override}\":\n\t{e}")
+                raise BBARFile_Error(f"Error parsing command line bbarfile override parameter \"-p {override}\":\n\t{e}")
 
-            config = override_dict(override_config, config)
-    return config
+            original = deep_dict_union(original,override_config)
+    return original
  
 
-def overwrite(base, overwriter):
-    pass
+def read_bbarfile( bbarfile_path, overrides):
 
-def read_bbarfile(bbarfile_path, parser, overrides):
-    
-    default_file_used = False if bbarfile_path else True
+    debug(f"Using bbarfile \"{bbarfile_path}\"", condition=bbarfile_path)
     bbarfile_path = bbarfile_path or default_bbarfile_name
-    check_valid_file(bbarfile_path, parser, default_file_used)
+    debug(f"Command line override parameters: {overrides}", condition=overrides)
 
+    check_valid_file(bbarfile_path)
+    defaults = toml.loads(bbarfile_defaults)
+    
     try:
         bbarfile_data = toml.load(bbarfile_path)
-        bbarfile_data = parse_overrides(overrides, bbarfile_data, parser)
+        bbarfile_data = deep_dict_union(defaults, bbarfile_data)
+        bbarfile_data = apply_user_overrides(bbarfile_data, overrides)
         bset = BBAR_Project(bbarfile_data)
         if not bset.initialized:
             raise("Unknown error")
     except toml.decoder.TomlDecodeError as e:
-        parser.error(f"Error parsing bbarfile TOML in \"{bbarfile_path}\":\n\t{e}")
+        raise BBARFile_Error(f"Error parsing bbarfile TOML in \"{bbarfile_path}\":\n\t{e}")
     except Exception as e:
         raise(e)
-        parser.error(f"Error reading or parsing bbarfile \"{bbarfile_path}\":\n\t{e}")
+        #raise BBARFile_Error(f"Error reading or parsing bbarfile \"{bbarfile_path}\":\n\t{e}")
 
     return bset

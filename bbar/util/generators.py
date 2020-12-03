@@ -1,3 +1,7 @@
+#TODO: Clean up:
+#           - don't need infinite stepper, 
+#           - don't need two separate generator functions
+
 def infinite_stepper(start, step):
     while True:
         yield start
@@ -20,12 +24,14 @@ def const_generator(const):
         
 def list_generator(l):
     for i in l:
-        yield l
+        yield i
         
 def generator_from_config(name, config, num_steps):
     if isinstance(config, dict):
         if "start" in config and "step" in config:
             return infinite_stepper(config["start"],config["step"])
+        elif "start" in config and "step_factor" in config:
+            return multiplicator(config["start"], config["step_factor"], num_steps)
         
     elif isinstance(config, list):
         if len(config) < num_steps:

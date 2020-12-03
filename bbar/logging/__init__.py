@@ -12,27 +12,27 @@ class Loglevel(Enum):
 
 verbosity = Loglevel.INFO
 
-def log(message, level):
-    if level.value <= verbosity.value:
+def log(message, level, condition):
+    if condition and level.value <= verbosity.value:
         if level == Loglevel.INFO:
             print(message)
         else:
             print(f"[BBAR {level.name}] {message}")
 
-def error(message):
-    log(message,Loglevel.ERROR)
+def error(message, condition=True):
+    log(message,Loglevel.ERROR, condition)
 
-def warning(message):
-    log(message,Loglevel.WARNING)
+def warning(message, condition=True):
+    log(message,Loglevel.WARNING, condition)
 
-def info(message):
-    log(message, Loglevel.INFO)
+def info(message, condition=True):
+    log(message, Loglevel.INFO, condition)
 
-def debug(message):
-    log(message, Loglevel.DEBUG)
+def debug(message, condition=True):
+    log(message, Loglevel.DEBUG, condition)
 
-def diagnostics(message):
-    log(message, Loglevel.DIAGNOSTICS)
+def diagnostics(message, condition=True):
+    log(message, Loglevel.DIAGNOSTICS, condition)
 
 def set_verbosity(new_verbosity):
     global verbosity 
