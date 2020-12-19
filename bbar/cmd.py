@@ -34,6 +34,8 @@ def main():
     try:
         if args.command in ["generate","run","cancel","purge"]:
             state_machine.try_command(args.command)
+        elif args.command == "analyze":
+            pass
         elif args.command == "status":
             state_machine.print_status()
         elif args.command == "archive":

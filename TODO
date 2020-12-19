@@ -1,1 +1,0 @@
-batchfile-name doesn't get the correct SBATCH_job-name, why? 
