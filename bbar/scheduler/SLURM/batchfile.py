@@ -25,7 +25,7 @@ class SLURM_batch_params:
 
         max_procs_per_node = int(config["max_procs_per_node"])
         self.n_procs = self.param_dict["n"] = n_procs
-        self.n_nodes = self.param_dict["N"] = ((n_procs+3)//max_procs_per_node)    
+        self.n_nodes = self.param_dict["N"] = ((n_procs+(max_procs_per_node-1))//max_procs_per_node)    
         self.procs_on_node = min(self.n_procs, max_procs_per_node)
 
         #TODO: this will probably fail spectacularily if referring to later batch params
