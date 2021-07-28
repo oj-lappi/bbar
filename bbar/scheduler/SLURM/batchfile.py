@@ -58,8 +58,6 @@ class SLURM_Batchfile(BaseBatchfile):
         self.filename = config["batchfile_name"].format(**format_params)
         self.env_vars = [f"{e}={val.format(**format_params)}" for e,val in config["env_vars"].items()]
 
-        print("ENV:",self.env_vars)
-
     def get_stats(self):
         if "jobid" not in self.__dict__ or not self.jobid:
             return {}
