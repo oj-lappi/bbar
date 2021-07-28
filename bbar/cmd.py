@@ -5,6 +5,12 @@ from bbar.constants import default_bbarfile_name
 from bbar.state_machine import BBAR_FSM
 from bbar.logging import set_verbosity
 
+
+def analyze(bbar_project):
+    bbar_project.scan_for_results()
+    state = bbar_project.state
+    print()
+
 def main():
     command_choices = ["generate", "run", "purge", "archive", "list", "status", "show_config"]
 
@@ -35,7 +41,7 @@ def main():
         if args.command in ["generate","run","cancel","purge"]:
             state_machine.try_command(args.command)
         elif args.command == "analyze":
-            pass
+            analyze(bbar_project)
         elif args.command == "status":
             state_machine.print_status()
         elif args.command == "archive":

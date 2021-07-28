@@ -7,6 +7,8 @@ scheduler          = "SLURM"
 
 status_analysis    = "exit_code"
 
+env_vars = []
+
 [sbatch_params]
 job-name = "benchmark_job"
 output   = "{SBATCH_job-name}-{SBATCH_n}.out"

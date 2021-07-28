@@ -91,6 +91,9 @@ class BBAR_FSM(StateMachine):
         debug("Scanning for SLURM output files.")
         self.bbar_project.scan_for_results()
 
+    def on_analyze(self):
+        debug("Analyzing output files.")
+
     def try_command(self, cmd):
         state = self.current_state
         if (cmd, state) in [("generate",self.generated), ("run",self.running)]:

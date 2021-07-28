@@ -52,10 +52,11 @@ class SLURM_Batchfile(BaseBatchfile):
         format_params = self.sbatch_params.format_params
 
         self.modules = LMOD_modules(config)
-        self.commands = SLURM_commands(config["benchmarks"], self.sbatch_params.format_params)
+        self.commands = SLURM_commands(config["benchmarks"], format_params)
         self.setup = config["setup"]
         self.cleanup = config["cleanup"]
         self.filename = config["batchfile_name"].format(**format_params)
+        self.env_vars = [e.format(**format_param) for e in config["env_vars"]]
 
     def get_stats(self):
         if "jobid" not in self.__dict__ or not self.jobid:
@@ -76,5 +77,6 @@ class SLURM_Batchfile(BaseBatchfile):
             "\n#this file was generated from a configuration file\n"\
             f"{self.setup+newline if self.setup else ''}"\
             f"{str(self.modules)+newline if self.modules else ''}\n"\
+            f"{newline.join(['export '+e for e in self.env_vars])}\n"\
             f"{self.commands}\n"\
             f"{newline+self.cleanup if self.cleanup else ''}"
