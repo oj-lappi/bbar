@@ -38,6 +38,12 @@ Then generate SLURM batch files and run them all with:
 
 	$bbar run 
 
+## Dependencies
+
+You need at least the `wheel` package from pip
+
+	$pip3 install --user wheel
+
 ## Installation
 
 Run the following in the source directory to install a linked source repo:
