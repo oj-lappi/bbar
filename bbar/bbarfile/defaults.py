@@ -7,7 +7,7 @@ scheduler          = "SLURM"
 
 status_analysis    = "exit_code"
 
-env_vars = []
+[env_vars]
 
 [sbatch_params]
 job-name = "benchmark_job"
