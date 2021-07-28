@@ -53,8 +53,8 @@ class SLURM_Batchfile(BaseBatchfile):
 
         self.modules = LMOD_modules(config)
         self.commands = SLURM_commands(config["benchmarks"], format_params)
-        self.setup = config["setup"]
-        self.cleanup = config["cleanup"]
+        self.setup = config["setup"].format(**format_params)
+        self.cleanup = config["cleanup"].format(**format_params)
         self.filename = config["batchfile_name"].format(**format_params)
         self.env_vars = [f"{e}={val.format(**format_params)}" for e,val in config["env_vars"].items()]
 
@@ -75,8 +75,8 @@ class SLURM_Batchfile(BaseBatchfile):
         return  "#!/bin/bash\n"\
             f"{self.sbatch_params}\n"\
             "\n#this file was generated from a configuration file\n"\
-            f"{self.setup+newline if self.setup else ''}"\
+            f"{newline+self.setup+newline if self.setup else ''}"\
             f"{str(self.modules)+newline if self.modules else ''}\n"\
-            f"{newline.join(['export '+e for e in self.env_vars])}\n"\
+            f"{newline.join(['export '+e for e in self.env_vars])}\n\n"\
             f"{self.commands}\n"\
-            f"{newline+self.cleanup if self.cleanup else ''}"
+            f"{newline+self.cleanup+newline if self.cleanup else ''}"
